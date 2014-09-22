@@ -47,7 +47,7 @@ class DocumentSpekDump(object):
         Returns a dict containing all tickets inserted in the csvfiles exported 
         from Spekx as a DocumentSpekDump's instance
         """
-        csvfiles = _get_csv_spekx(workdir)
+        csvfiles = self._get_csv_spekx(workdir)
         documents = []
         for csvfile in csvfiles:
             with open(csvfile) as csvcurrent:
