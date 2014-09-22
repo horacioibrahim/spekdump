@@ -1,7 +1,7 @@
 SPEKDUMPS
 ==========
 It's a lib to handling the spekx CSV files. We suppress the 
-letter 'x' because the 'X' presuppose power. This not real :/
+letter 'x' because the 'X' presuppose power. This not real in the Spekx :(
  
 
 Quick Usage
