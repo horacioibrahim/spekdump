@@ -7,7 +7,7 @@ letter 'x' because the 'X' presuppose power. This not real in the Spekx :(
 Quick Usage
 -----------
 ```
-import spekdumps
+from spekdump.lib import spekdumps
 
 dumps = spekdumps.DocumentSpekDump()
 workdir = "/ABSOLUTE/PATH/FOR/CSV_FILES"
