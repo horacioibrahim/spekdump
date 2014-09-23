@@ -4,6 +4,7 @@ import csv
 import re
 import os
 from os.path import join
+from datetime import datetime
 
 # app
 import config
@@ -14,6 +15,19 @@ class DocumentSpekDump(object):
     def __init__(self, **kwargs):
         self.document = kwargs
 
+
+    def _has_pattern_date(self, value):
+        """ If value has your pattern as date to convert it in datetime
+        """
+        re_date_format = re.compile(r"[\d]{4}-[\d]{2}-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2}")
+        res = re_date_format.match(value)
+
+        if res:
+            date_formated = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            return date_formated
+        else:
+            pass
+        
     def _get_csv_spekx(self, workdir):
         """ Analysis all files in workdir that match to rex and returns
         a list with the results
@@ -68,6 +82,9 @@ class DocumentSpekDump(object):
                         values = []
                         for value in line:
                             value = value.decode('iso-8859-1').encode('utf-8')
+                            date_checked = self._has_pattern_date(value)
+                            if date_checked:
+                                value = date_checked
                             values.append(value)
 
                     if len(fields) == len(values):
