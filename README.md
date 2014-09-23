@@ -6,7 +6,9 @@ letter 'x' because the 'X' presuppose power. This not real in the Spekx :(
 
 Quick Install
 -----------
+```
 pip install git+https://github.com/horacioibrahim/spekdump.git
+```
 
 
 Quick Usage
