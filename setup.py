@@ -6,23 +6,23 @@ except ImportError:
 
 import sys, os
 from setuptools import find_packages
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-from lib.version import __version__
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'spekdump'))
+from spekdump.version import __version__
 
 setup(
   name='spekdump',
   version= __version__,
   author='Horacio Ibrahim',
   author_email='horacioibrahim@gmail.com',
-  packages=find_packages('lib'),
-  package_dir={'': 'lib'},
+  packages=find_packages('.'),
+  package_dir={'': '.'},
   scripts=[],
   url='https://github.com/horacioibrahim/spekdump',
   license='MIT License',
   description="It's a lib to handling the spekx CSV files",
   classifiers=[
     'Development Status :: Production/Stable',
-    'Intended Audience :: Users, Developers',
+    'Intended Audience :: Developers',
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python',
