@@ -32,7 +32,7 @@ for doc in documents:
 
 ```
 
-Adavanced Usage
+Advanced Usage
 ----------------
 You can to use any lib to plot a graph. We're showing how make it 
 with https://plot.ly/ with a Demo Account. 
