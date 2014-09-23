@@ -10,6 +10,13 @@ Quick Install
 pip install git+https://github.com/horacioibrahim/spekdump.git
 ```
 
+Requirements
+------------
+It's required that you have exported the files CSV from SPEKX in a
+directory (or workdir). No stress with order, if exists duplicate ticket
+in distinct files, etc. You ONLY need to export the field 'ACIONAMENTO'
+from SPEKX in all files (CSV).
+
 
 Quick Usage
 -----------
@@ -53,6 +60,8 @@ python -c "import plotly; plotly.tools.set_credentials_file(username='DemoAccoun
 *Step three*
 We're to generate the numbers of demands by day 
 ```
+import plotly.plotly as py
+
 from spekdump import database
 
 dic_date_numbers = database.SpekDumpDAO().count_document_by_date
