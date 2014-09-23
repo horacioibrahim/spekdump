@@ -86,7 +86,7 @@ class DocumentSpekDump(object):
         """
         Uses update if not exist insert rather update the objetc
         """
-        collection = config.get_database()
+        collection = config._get_database()
         ticket_id = self.document['ACIONAMENTO']
         try:
             collection.update({'_id': ticket_id}, {'$set': self.document}, upsert=True)

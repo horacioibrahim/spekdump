@@ -4,10 +4,15 @@ It's a lib to handling the spekx CSV files. We suppress the
 letter 'x' because the 'X' presuppose power. This not real in the Spekx :(
  
 
+Quick Install
+-----------
+pip install git+https://github.com/horacioibrahim/spekdump.git
+
+
 Quick Usage
 -----------
 ```
-from spekdump.lib import spekdumps
+from spekdump import spekdumps
 
 dumps = spekdumps.DocumentSpekDump()
 workdir = "/ABSOLUTE/PATH/FOR/CSV_FILES"
