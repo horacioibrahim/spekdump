@@ -1,4 +1,10 @@
 # -*- coding=UTF-8 -*-
+#
+# The scope this module is to make upload of data from SPEK's CSV files
+# to MongoDB. The method save() must be the unique point of contact of the
+# module with a database. All others operations with database must be performed
+# by database.py module.
+#
 
 import csv
 import re
@@ -63,17 +69,18 @@ class DocumentSpekDump(object):
         """
         csvfiles = self._get_csv_spekx(workdir)
         documents = []
+
         for csvfile in csvfiles:
             with open(csvfile) as csvcurrent:
                 count_first_line = 0
                 lines = csv.reader(csvcurrent)
                 # Each line is one document
+                fields = [] # fields occurs only first loop
                 for line in lines:
                     document = {}
-                    # Mouting the fields with fisrt line
+                    # Mounting the fields with first line
                     if count_first_line == 0:
                         count_first_line += 1
-                        fields = []
                         for field in line:
                             fields.append(field)
                         #lines.next()
@@ -92,12 +99,42 @@ class DocumentSpekDump(object):
                             pos = fields.index(field)
                             document[field] = values[pos]
                     else:
-                        raise TypeError("The lines are incosistent in csvfile\n")
+                        raise TypeError("The lines are incosistent in " \
+                            "csvfile %s" % csvcurrent.name)
                     
                     doc_spk_dump = DocumentSpekDump(**document)
                     documents.append(doc_spk_dump)
 
-        return documents        
+        return documents
+
+    def register_tickets(self, workdir):
+        """
+        Save all tickets returned by get_tickets in database. This is a
+        shorthand to avoid a for loop as:
+
+        dumps = instance.get_tickets()
+        for doc in dumps:
+            doc.save()
+
+        Otherwise. You can to call:
+        dumps.register_tickets()
+
+        Args:
+            workdir: directory that contains all CSV files (in level)
+
+        Returns:
+            quantity of documents saved
+
+        """
+        documents = self.get_tickets(workdir)
+        count = 0
+
+        for doc in documents:
+            doc.save()
+            count += 1
+
+        return count
+
 
     def save(self):
         """

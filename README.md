@@ -20,22 +20,30 @@ from SPEKX in all files (CSV).
 
 Quick Usage
 -----------
+To register all documents in database:
+
 ```
 from spekdump import spekdumps
 
 dumps = spekdumps.DocumentSpekDump()
 workdir = "/ABSOLUTE/PATH/FOR/CSV_FILES"
-documents = dumps.get_tickets(workdir) # All documents from all *.csv in workdir
+documents = dumps.register_tickets(workdir)
 
-# Saves all documents in database ...
-for doc in documents:
-    doc.save() # if exist is updated or it's created a new document
+```
 
-# or
+If you want to handling lines from CSV files. You can doing working with
+dictionary objects
+
+```
+from spekdump import spekdumps
+
+dumps = spekdumps.DocumentSpekDump()
+workdir = "/ABSOLUTE/PATH/FOR/CSV_FILES"
+documents = dumps.get_tickets(workdir)
 
 # Prints each ticket as dict
 for doc in documents:
-    doc.document 
+    print doc.document
 
 ```
 
