@@ -6,9 +6,10 @@ import os
 import tempfile
 import pymongo
 from datetime import datetime
+from time import sleep
 
 # APP
-from spekdump import spekdumps
+from spekdump import spekdumps, database, config
 
 
 def get_client(*args, **kwargs):
@@ -19,11 +20,116 @@ def get_client(*args, **kwargs):
 class TestDatabase(unittest.TestCase):
 
     def setUp(self):
-        self.mongo = get_client()
-        self.db = self.mongo.test.csvfields
+        self.spekdb = database.SpekDumpDAO()
+        self.spekdb.db = {'database':'test', 'collection': 'spekdumps'}
+        doc1 = {'_id': 1, 'b': 2, 'c': 3}
+        doc2 = {'_id': 4, 'b': 5, 'c': 6}
+        doc3 = {'_id': 7, 'b': 8}
+        self.spekdb.save(doc1)
+        self.spekdb.save(doc2)
+        self.spekdb.save(doc3)
 
     def tearDown(self):
+        self.spekdb.db.drop()
+
+    def test_db_setter_exception(self):
+        spekdb = database.SpekDumpDAO()
+        self.assertRaises(TypeError, spekdb.db, 'csvfields')
+
+    def test_init_args(self):
+        spekdb = database.SpekDumpDAO()
+        spekdb.db = {'database':'test', 'collection': 'spekdumps_init'}
+        doc = {'_id': 1, 'b': 2, 'c': 7}
+        success = spekdb.save(doc)
+        self.assertEqual(success, 0)
+        spekdb.db.drop()
+
+    def test_init_default_without_args(self):
+        spekdb = database.SpekDumpDAO()
+        self.assertEqual(spekdb.db.database.name, config.DATABASE)
+        self.assertEqual(spekdb.db.name, config.COLLECTION)
+
+    def test_get_all_documents(self):
+        docs = self.spekdb.get_all_documents()
+        self.assertEqual(3, docs.count())
+
+    def test__make_filter(self):
+        filters = {'name': 'Horacio'}
+        obj = database.SpekDumpDAO()
+        res = obj._make_filter(filters=filters.items())
+        self.assertIsInstance(res, dict)
+        self.assertIsInstance(res['$and'], list)
+        self.assertEqual(res['$and'][0]['name'], 'Horacio')
+
+    def test__clean_filter_mode_0(self):
+        """
+        Test if filter return all documents only warning messages
+        """
+        filters = {'c': None} # get when c field is null
+        docs = self.spekdb.get_all_documents()
+        result = self.spekdb._clean_filter(filters, docs, mode=0)
+        self.assertIsInstance(result, list)
+        self.assertEqual(3, len(result))
+
+    def test__clean_filter_mode_1(self):
+        """Test if one document will be purged because the field c is None
+        """
+        filters = {'c': None} # get when c field is null
+        docs = self.spekdb.get_all_documents()
+        result = self.spekdb._clean_filter(filters, docs, mode=1)
+        self.assertIsInstance(result, list)
+        self.assertEqual(2, len(result))
+
+    def test__clean_filter_mode_2(self):
+        """Test if one document will be purged because the field c is None
+        and print messages of warnings
+        """
+        filters = {'c': None} # get when c field is null
+        docs = self.spekdb.get_all_documents()
+        result = self.spekdb._clean_filter(filters, docs, mode=2)
+        self.assertIsInstance(result, list)
+        self.assertEqual(2, len(result))
+
+    def test_filter_to_none(self):
+        """Test if return zero document or a document with null value
+        in database
+        """
+        filters = [('c', None)] # get when c field is null
+        docs = self.spekdb.filter(filters)
+        self.assertEqual(0, docs.count())
+        doc4 = {'_id': 11, 'b': 5, 'c': None}
+        self.spekdb.save(doc4)
+        docs = self.spekdb.filter(filters)
+        self.assertEqual(1, docs.count())
+
+    def test_count_by(self):
+        """Test if return one document"""
+        filters = [('_id', 1)]
+        self.assertEqual(1, self.spekdb.count_by(filters))
+
+    def test_save_w_update(self):
+        """Saves an existent or non-existent document"""
+        new_doc = {'_id': 'test_save_w_update', 'b': 10, 'c': 100}
+        obj = database.SpekDumpDAO()
+        obj.save(new_doc)
+        one = obj.db.find_one({'_id': 'test_save_w_update'})
+        self.assertEqual(new_doc['_id'], one['_id'])
+
+
+    def test_save_l_update(self):
+        """Saves an non-existent document"""
         pass
+
+
+
+
+
+
+
+
+
+
+
 
 
 class TestSpekDump(unittest.TestCase):
@@ -33,7 +139,32 @@ class TestSpekDump(unittest.TestCase):
         self.db = self.mongo.test.csvfields
         self.instance = spekdumps.DocumentSpekDump()
 
+        # CSV for tests
+        self.tempdir = tempfile.mkdtemp()
+        self.f1 = os.path.join(self.tempdir, '2014_01_10_10_22_20_CSV')
+        self.f2 = os.path.join(self.tempdir, '2014_02_10_10_22_20_CSV')
+        self.ff1 = open(self.f1, "w+")
+        self.ff2 = open(self.f2, "w+")
+
+        # writing in csv
+        self.ff1.write('Nome, Lugar, Objeto')
+        self.ff1.write('\n')
+        self.ff1.write('Canpbell, Cappadocia, Chair')
+        self.ff1.write('\n')
+        self.ff1.write('Cameron Dias, California, Cone')
+        self.ff1.write('\n')
+        self.ff1.close()
+
+        self.ff2.write('Nome, Lugar, Objeto')
+        self.ff2.write('\n')
+        self.ff2.write('Michael Jordan, Maryland, Mocock')
+        self.ff2.write('\n')
+        self.ff2.close()
+
     def tearDown(self):
+        os.remove(self.f1)
+        os.remove(self.f2)
+        os.rmdir(self.tempdir)
         self.db.drop()
 
     def test__has_pattern_date(self):
@@ -125,6 +256,17 @@ class TestSpekDump(unittest.TestCase):
         os.remove(f3)
         os.rmdir(tempdir)
 
+    def test_register_tickets(self):
+        """
+        Test if returns the quantity documents saved
+        """
+        self.assertIsInstance(self.instance.register_tickets(self.tempdir,
+                                                            "Nome"), int)
+
+    def test_save(self):
+        docs = self.instance.get_tickets(self.tempdir)
+        res = docs[0].save(id_field="Nome")
+        self.assertEqual(res, 0)
 
 
 if __name__ == "__main__":

@@ -6,15 +6,55 @@ import config
 
 
 class SpekDumpDAO(object):
-    collection = config._get_database()
-    db = collection # alias
+
+
+    def __init__(self, *args, **kwargs):
+
+        # Constructor...
+        host = kwargs.get("host", None)
+        database = kwargs.get("database", None)
+        collection = kwargs.get("collection", None)
+        self._db = None
+        self.db = {'host': host, 'database': database, 'collection': collection}
+
+
+    @property
+    def db(self):
+        return self._db
+
+    @db.setter
+    def db(self, attrs=None):
+        if attrs and not isinstance(attrs, dict):
+            raise TypeError("Argument attrs must be a dict "
+                            "{host: X, database: y, collection: Z}")
+
+        host = attrs.get("host", None)
+        database = attrs.get("database", None)
+        collection = attrs.get("collection", None)
+
+        if host or database or collection:
+            self._db = config.get_database(host=host, database=database,
+                                           collection=collection)
+        else:
+            if not self._db:
+                self._db = config.get_database()
+
+
+    @db.deleter
+    def db(self):
+        del self._db
 
     def get_all_documents(self):
         return self.db.find({})
 
     def _make_filter(self, filters=[]):
         """
-        Creates a dictionary to filter in MongoDB sintaxe's find
+        Creates a filter in MongoDB for fields and values.
+        _make_filter([(key, value)]) ->
+                    {$and: [ {key: value}, {key:{$exists: True}} ] }
+
+        Args:
+            filters -> list of tuples (key, value)
         """
         dict_filter = {}
 
@@ -73,14 +113,14 @@ class SpekDumpDAO(object):
 
         return documents
 
-    def filter(self, filters=[], mode=0):
+    def filter(self, filters, mode=0):
         """
-        Makes a filter with base field:term
+        Makes a filter with base a list with (field, value)
 
         Args:
             filters: a list of tuples with the pair (field, term). e.g:
                 [('field1', 'termX'), ('field2', 'termY')]
-            mode:
+            mode (DEPRECATED see _clean_filter):
                 0 (warn) -> only report with output messages with warnings
                 1 (strict) -> purges documents without the field
                 2 (warn and strict) -> report and purge
@@ -93,14 +133,43 @@ class SpekDumpDAO(object):
 
         return docs
 
-    def count_by(self, filters=[]):
+    def count_by(self, filters):
         """
+        Returns the quantity of documents by specified filters
 
         Args:
            filters: a list of tuples with the pair (field, term). e.g:
                 [('field1', 'termX'), ('field2', 'termY')]
         """
-        docs_list = self.filter(filters, mode=1) # count only strict matched
-        counted = len(docs_list)
+        docs_list = self.filter(filters) # count only strict matched
+        counted = docs_list.count()
 
         return counted
+
+
+    def save(self, document, id_field="_id"):
+        """
+        Uses update if not exist insert rather update the object
+
+        Args:
+            document -> a dictionary with MongoDB's syntax to save it
+            id_field -> name of field it'll indexed. Default is _id
+        """
+        # TODO: support multiple indexes (unique with fields)
+
+        collection = self.db
+
+        try:
+            _id = document[id_field]
+            new_doc = document.copy() # It's need if reuse document. See tests.
+            del new_doc[id_field]
+        except KeyError, e:
+            raise TypeError("The method save() required an arg id_field or the "
+                            "key _id in document") # TODO: create exceptions
+
+        try:
+            collection.update({'_id': _id}, {'$set': new_doc},
+                              upsert=True)
+            return 0
+        except:
+            raise

@@ -14,13 +14,13 @@ from datetime import datetime
 
 # app
 import config
+import database
 
 
 class DocumentSpekDump(object):
 
     def __init__(self, **kwargs):
         self.document = kwargs
-
 
     def _has_pattern_date(self, value):
         """ If value has your pattern as date to convert it in datetime
@@ -107,46 +107,46 @@ class DocumentSpekDump(object):
 
         return documents
 
-    def register_tickets(self, workdir):
+    def register_tickets(self, workdir, id_field="ACIONAMENTO"):
         """
-        Save all tickets returned by get_tickets in database. This is a
-        shorthand to avoid a for loop as:
+        Save all tickets (or lines) returned by get_tickets in database.
+        This is a shorthand to avoid a for loop as:
 
         dumps = instance.get_tickets()
         for doc in dumps:
             doc.save()
 
-        Otherwise. You can to call:
+        Now. You can to call:
         dumps.register_tickets()
 
         Args:
             workdir: directory that contains all CSV files (in level)
+            id_field: field to index, e.g.: in mailchimp it'is email,
+            a system of tickets, the ticket id can be a id
 
         Returns:
             quantity of documents saved
 
         """
+        # TODO: support multiple indexes
+
         documents = self.get_tickets(workdir)
         count = 0
 
         for doc in documents:
-            doc.save()
+            doc.save(id_field)
             count += 1
 
         return count
 
 
-    def save(self):
+    def save(self, id_field):
         """
         Uses update if not exist insert rather update the objetc
         """
-        collection = config._get_database()
-        ticket_id = self.document['ACIONAMENTO']
-        try:
-            collection.update({'_id': ticket_id}, {'$set': self.document}, upsert=True)
-        except:
-            raise # Fix it
-
-    
-
+        if self.document:
+            return database.SpekDumpDAO().save(self.document, id_field)
+        else:
+            raise TypeError("save() require that instance has the document "
+                            "attribute loaded.")
 
