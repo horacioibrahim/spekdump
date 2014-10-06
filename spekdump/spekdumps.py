@@ -72,38 +72,18 @@ class DocumentSpekDump(object):
 
         for csvfile in csvfiles:
             with open(csvfile) as csvcurrent:
-                count_first_line = 0
-                lines = csv.reader(csvcurrent)
-                # Each line is one document
-                fields = [] # fields occurs only first loop
-                for line in lines:
-                    document = {}
-                    # Mounting the fields with first line
-                    if count_first_line == 0:
-                        count_first_line += 1
-                        for field in line:
-                            fields.append(field)
-                        #lines.next()
-                        continue
-                    else:
-                        values = []
-                        for value in line:
-                            value = value.decode('iso-8859-1').encode('utf-8')
-                            date_checked = self._has_pattern_date(value)
-                            if date_checked:
-                                value = date_checked
-                            values.append(value)
+                dict_reader = csv.DictReader(csvcurrent)
+                for document in dict_reader:
+                    # Fixes encoding...
+                    for k, v in document.items():
+                        if v is not None:
+                            v = v.decode('iso-8859-1').encode('utf-8')
+                        date_checked = self._has_pattern_date(v)
+                        if date_checked:
+                            document[k] = date_checked
 
-                    if len(fields) == len(values):
-                        for field in fields:
-                            pos = fields.index(field)
-                            document[field] = values[pos]
-                    else:
-                        raise TypeError("The lines are incosistent in " \
-                            "csvfile %s" % csvcurrent.name)
-                    
-                    doc_spk_dump = DocumentSpekDump(**document)
-                    documents.append(doc_spk_dump)
+                    spk = DocumentSpekDump(**document)
+                    documents.append(spk)
 
         return documents
 
