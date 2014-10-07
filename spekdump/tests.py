@@ -107,18 +107,17 @@ class TestDatabase(unittest.TestCase):
         filters = [('_id', 1)]
         self.assertEqual(1, self.spekdb.count_by(filters))
 
-    def test_save_w_update(self):
+    def test_save(self):
         """Saves an existent or non-existent document"""
         new_doc = {'_id': 'test_save_w_update', 'b': 10, 'c': 100}
         obj = database.SpekDumpDAO()
         obj.save(new_doc)
         one = obj.db.find_one({'_id': 'test_save_w_update'})
         self.assertEqual(new_doc['_id'], one['_id'])
+        new_doc['b'] = 200
+        res = obj.save(new_doc)
+        self.assertEqual(0, res)
 
-
-    def test_save_l_update(self):
-        """Saves an non-existent document"""
-        pass
 
 
 
