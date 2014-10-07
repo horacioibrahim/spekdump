@@ -13,7 +13,6 @@ from os.path import join
 from datetime import datetime
 
 # app
-import config
 import database
 
 
