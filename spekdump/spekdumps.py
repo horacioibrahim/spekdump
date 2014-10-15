@@ -15,31 +15,55 @@ from datetime import datetime
 # app
 import database
 
+class CSVMongo(object):
 
-class DocumentSpekDump(object):
 
-    def __init__(self, **kwargs):
-        self.document = kwargs
+    def __init__(self, date_format=None, **kwargs):
+        self.date_format = date_format
 
-    def _has_pattern_date(self, value):
-        """ If value has your pattern as date to convert it in datetime
+    def _has_pattern_date(self, value,
+             dt_pattern=r"[\d]{4}-[\d]{2}-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2}"):
         """
-        re_date_format = re.compile(r"[\d]{4}-[\d]{2}-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2}")
+        Checks if a string value match with a pattern.
+        The pattern is custom by user. Or return None if no match occurred.
+
+        :param dt_pattern: a raw string of regex to make the match with date
+        format.
+        :param value: is a string, provably with date formatted that will be
+        translate to the type date/datetime if matched.
+        """
+        re_date_format = re.compile(dt_pattern) # date pattern
         res = re_date_format.match(value)
-
         if res:
-            date_formated = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-            return date_formated
-        else:
-            pass
-        
-    def _get_csv_spekx(self, workdir):
-        """ Analysis all files in workdir that match to rex and returns
-        a list with the results
-        
-        Args:
-            workdir: absolute path to directory that contains the files
+            return self._convert_str_to_datetime(value)
 
+    def _convert_str_to_datetime(self, value, str_format='%Y-%m-%d %H:%M:%S'):
+        """
+        Convert datetime string in a datetime object.
+
+        :param value: string value will be converted
+        :str_format: the date/datetime format wanted.
+        """
+        date_formated = datetime.strptime(value, str_format)
+        return date_formated
+
+
+class DocumentSpekDump(CSVMongo):
+
+    def __init__(self, date_format=None, **kwargs):
+        super(DocumentSpekDump, self).__init__(self, **kwargs)
+        self.document = kwargs
+        self.date_format = r"[\d]{4}-[\d]{2}-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2}"
+        
+    def _get_csv_spekx(self, workdir, file_pattern=r".csv",
+                       ignorecase=True):
+        """ Analysis all files in workdir that match to file_pattern and returns
+        a list with the results.
+
+        :param workdir: absolute path to directory that contains the files. If
+        None current directory is workdir
+        :param file_pattern: a regex pattern that combines with all files
+        :param ignorecase: if True file_pattern can be CSV or csv, etc.
         """
         if workdir is None:
             workdir = os.path.curdir
@@ -47,13 +71,16 @@ class DocumentSpekDump(object):
             assert os.path.isabs(workdir)
 
         csvfiles = []
-        rex = re.compile(r"[\d]+_[\d]+_[\d]+_[\d]+_[\d]+_[\d]+_CSV")
+        rex = re.compile(file_pattern)
         walkobj = os.walk(workdir).next()
         dirname = walkobj[0]
         all_files = walkobj[2]
 
         for f in all_files:
-            resx = rex.match(f)
+            if ignorecase:
+                resx = rex.match(f, re.IGNORECASE)
+            else:
+                resx = rex.match(f)
             
             if resx:
                 absfile = join(dirname, f)
@@ -63,10 +90,10 @@ class DocumentSpekDump(object):
 
     def get_tickets(self, workdir):
         """
-        Returns a dict containing all tickets inserted in the csvfiles exported 
-        from Spekx as a DocumentSpekDump's instance
+        Returns a dict containing all tickets/lines inserted in a csvfiles.
         """
-        csvfiles = self._get_csv_spekx(workdir)
+        csvfiles = self._get_csv_spekx(workdir,
+                      file_pattern=r"[\d]+_[\d]+_[\d]+_[\d]+_[\d]+_[\d]+_CSV")
         documents = []
 
         for csvfile in csvfiles:
@@ -77,7 +104,7 @@ class DocumentSpekDump(object):
                     for k, v in document.items():
                         if v is not None:
                             v = v.decode('iso-8859-1').encode('utf-8')
-                        date_checked = self._has_pattern_date(v)
+                        date_checked = self._has_pattern_date(v) # pattern default
                         if date_checked:
                             document[k] = date_checked
 

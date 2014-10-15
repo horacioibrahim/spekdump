@@ -190,7 +190,8 @@ class TestSpekDump(unittest.TestCase):
         ff1 = open(f1, "w+")
         ff2 = open(f2, "w+")
         ff3 = open(f3, "w+")
-        container = self.instance._get_csv_spekx(tempdir)
+        container = self.instance._get_csv_spekx(tempdir,
+                    file_pattern=r"[\d]+_[\d]+_[\d]+_[\d]+_[\d]+_[\d]+_CSV")
 
         # remove temp dir
         os.remove(f1)
