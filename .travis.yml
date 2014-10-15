@@ -6,5 +6,5 @@ services:
 before_script:
     - sleep 15
 # install dependencies
-install: "pip install -r requirements.text"
+install: "pip install -r requirements.txt"
 script: nosetests
